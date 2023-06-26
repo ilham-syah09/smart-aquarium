@@ -12,8 +12,15 @@ HTTPClient http;
 
 //simple timer
 #include <SimpleTimer.h>
-SimpleTimer firstTimer;
-SimpleTimer pakanTimer;
+SimpleTimer timerKuras;
+
+//rtc
+#include "RTClib.h"
+RTC_DS3231 rtc;
+char dataHari[7][12] = {"Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"};
+String hari, waktu;
+int tanggal, bulan, tahun;
+String jam, menit, detik;
 
 // lcd
 #include <LiquidCrystal_I2C.h>
@@ -35,7 +42,10 @@ float kekeruhan;
 // pump
 #define pump D5
 
-boolean flag = false;
+#define relay_on LOW
+#define relay_off HIGH
+
+boolean flag = false, jadwal1 = false, jadwal2 = false, jadwal3 = false;;
 
 // URL WEB IOT
 String host = "http://192.168.181.185/smart-aquarium/api";
@@ -44,9 +54,10 @@ String urlGetSetting = host + "/setting";
 
 String respon, jadwalPakan;
 
+int tinggiAquarium = 20, tinggiAir = 0;
+
 void setup() {
   // put your setup code here, to run once:
-
   lcd.init();
   lcd.backlight();
 
@@ -91,15 +102,21 @@ void setup() {
     }
   }
 
-  firstTimer.setInterval(2000);
-  pakanTimer.setInterval(1000);
+  if (! rtc.begin()) {
+    Serial.println("RTC Tidak Ditemukan");
+    Serial.flush();
+    abort();
+  }
+
+  //Atur Waktu
+  rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 
   pinMode(airPinTrigger, OUTPUT);
   pinMode(airPinEcho, INPUT);
 
   // water pump
   pinMode(pump, OUTPUT);
-  digitalWrite(pump, LOW);
+  digitalWrite(pump, relay_off);
 
   //  servo
   servo.attach(pinServo);
@@ -115,8 +132,152 @@ void setup() {
 }
 
 void loop() {
+  // baca tinggi air
+  bacaTinggiAir();
+
+  // jadwal pakan kontrol
+  jadwalKontrol();
+
+  // baca waktu rtc
+  bacaWaktuRtc();
+
+  // sensor turbidity
+  bacaTurbidity();
+
+  // kirim database
+  kirimDatabase();
+
+  Serial.println();
+  delay(1000);
+}
+
+void jadwalKontrol() {
+  jadwalPakan = "OFF";
+  
+  // AMBIL DATA PAKAN
+  if ((WiFiMulti.run() == WL_CONNECTED))
+  {
+    USE_SERIAL.print("[HTTP] Memulai...\n");
+    
+    http.begin(client, urlGetSetting );
+    
+    USE_SERIAL.print("[HTTP] Ambil data jadwalPakan di database ...\n");
+    int httpCode = http.GET();
+
+    if(httpCode > 0)
+    {
+      USE_SERIAL.printf("[HTTP] kode response GET : %d\n", httpCode);
+
+      if (httpCode == HTTP_CODE_OK)
+      {
+        Serial.println();
+        
+        respon = http.getString();
+
+        jadwalPakan = getValue(respon, '#', 0);
+
+        USE_SERIAL.println("jadwalPakan : " + jadwalPakan);
+        delay(200);
+      }
+    }
+    else
+    {
+      USE_SERIAL.printf("[HTTP] GET data gagal, error: %s\n", http.errorToString(httpCode).c_str());
+    }
+    http.end();
+  }
+
+  if (jadwalPakan == "ON") {
+    if (flag == false) {
+      Serial.println("SERVO ON");
+      handleServo();
+      
+      flag = true;
+    }
+  } else {
+    Serial.println("SERVO OFF");
+    servo.write(0);
+
+    flag = false;
+  }
+}
+
+void bacaWaktuRtc() {
+  DateTime now = rtc.now();
+  hari    = dataHari[now.dayOfTheWeek()];
+  tanggal = now.day(), DEC;
+  bulan   = now.month(), DEC;
+  tahun   = now.year(), DEC;
+  jam     = now.hour(), DEC;
+  menit   = now.minute(), DEC;
+  detik   = now.second(), DEC;
+
+  if (jam.length() == 1) {
+    jam = "0" + jam;
+  }
+  if (menit.length() == 1) {
+    menit = "0" + menit;
+  }
+  if (detik.length() == 1) {
+    detik = "0" + detik;
+  }
+  
+  waktu   = jam + ":" + menit;
+
+  Serial.println(String() + hari + ", " + tanggal + "-" + bulan + "-" + tahun);
+  Serial.println(waktu);
+  Serial.println();
+
+  // jadwal1    
+  if(waktu == "07:10"){
+    if(jadwal1 == false){
+      handleServo();
+      Serial.println("SUKSES");
+      jadwal1 = true;
+    }
+  } else {
+    jadwal1 = false;
+  }
+
+  // jadwal2
+  if(waktu == "12:10"){
+    if(jadwal2 == false){
+      handleServo();
+      Serial.println("SUKSES");
+      jadwal2 = true;
+    }
+  } else {
+    jadwal2 = false;
+  }
+
+  // jadwal3
+  if(waktu == "16:10"){
+    if(jadwal3 == false){
+      handleServo();
+      Serial.println("SUKSES");
+      jadwal3 = true;
+    }
+  } else {
+    jadwal3 = false;
+  }
+
+  delay(1000);
+}
+
+void handleServo() {
+  Serial.println("Servo Open");
+      
+  for(int i=1; i <= 3; i++){
+    servo.write(90);
+    delay(300);
+    servo.write(0);
+    delay(100);
+  }
+}
+
+void bacaTinggiAir() {
   //  Inisialisasi variabel untuk pembacaan tinggi pakan
-  long duration, jarak, tinggiPakan;
+  long duration, jarak;
   digitalWrite(airPinTrigger, LOW);
   delayMicroseconds(2);
   digitalWrite(airPinTrigger, HIGH);
@@ -128,139 +289,82 @@ void loop() {
   jarak = (duration / 2) / 29.1;
   Serial.print("Jarak : ");
   Serial.println(jarak);
+
+  tinggiAir = tinggiAquarium - jarak;
+
+  if (tinggiAir < 0) {
+    tinggiAir = 0;
+  }
   
   Serial.println();
+}
 
-  // jadwal pakan
-  jadwal();
+void bacaTurbidity() {
+  int sensorValue = analogRead(pinTurbidity);
+  kekeruhan = 100 - (sensorValue / 10.24);
 
-  if (firstTimer.isReady()) {                    // Check is ready a second timer
-        Serial.println("Called every 3 sec");
-        int sensorValue = analogRead(pinTurbidity);
-        kekeruhan = 100 - (sensorValue / 10.24);
-      
-        Serial.print("Kekeruhan Air : ");
-        Serial.println(kekeruhan);
-        lcd.setCursor(1,0);
-        lcd.print("KEKERUHAN AIR");
-        lcd.setCursor(3,1);
-        lcd.print(kekeruhan);
-        lcd.setCursor(10,1);
-        lcd.print("NTU");
+  Serial.print("Kekeruhan Air : ");
+  Serial.print(kekeruhan);
+  Serial.println(" NTU");
+  
+  lcd.setCursor(1,0);
+  lcd.print("KEKERUHAN AIR");
+  lcd.setCursor(3,1);
+  lcd.print(kekeruhan);
+  lcd.setCursor(10,1);
+  lcd.print("NTU");
 
-        firstTimer.reset();                        // Reset a second timer
+  if (kekeruhan >= 5.01 && kekeruhan <= 15.00)
+  {
+    timerKuras.setInterval(10000);
+
+    if (timerKuras.isReady()) {
+      digitalWrite(pump, relay_off);
+      Serial.println("Pompa Air Berhenti");
+
+      timerKuras.reset();
+    } else {
+      digitalWrite(pump, relay_on);
+      Serial.println("Pompa Air Berjalan");
     }
+  }
+  else
+  {
+    digitalWrite(pump, relay_off);
+    Serial.println("Pompa Air Berhenti");
+  }
 
-    if (kekeruhan >= 5.01 && kekeruhan <= 15.00)
+  Serial.println();
+}
+
+void kirimDatabase() {
+  // kirim data sensor
+  if ((WiFiMulti.run() == WL_CONNECTED))
+  {
+    USE_SERIAL.print("[HTTP] Memulai...\n");
+    
+    http.begin(client, urlSimpan + (String) kekeruhan + "&tinggiAir=" + (String) tinggiAir);
+    
+    USE_SERIAL.print("[HTTP] Menyimpan data sensor ke database ...\n");
+    int httpCode = http.GET();
+
+    if(httpCode > 0)
     {
-      if(jarak <= 5 && jarak <= 10)
+      USE_SERIAL.printf("[HTTP] kode response GET : %d\n", httpCode);
+
+      if (httpCode == HTTP_CODE_OK)
       {
-        digitalWrite(pump, HIGH);
-        Serial.println("Pompa Air Berjalan");
-      } else {
-        digitalWrite(pump, LOW);
-        Serial.println("Pompa Air Berjalan");
+        respon = http.getString();
+        USE_SERIAL.println("Respon : " + respon);
+        delay(200);
       }
-      
     }
     else
     {
-      digitalWrite(pump, LOW);
-      Serial.println("Pompa Air tidak berjalan");
+      USE_SERIAL.printf("[HTTP] GET data gagal, error: %s\n", http.errorToString(httpCode).c_str());
     }
-
-    Serial.println();
-
-    // kirim data sensor
-    if ((WiFiMulti.run() == WL_CONNECTED))
-    {
-      USE_SERIAL.print("[HTTP] Memulai...\n");
-      
-      http.begin(client, urlSimpan + (String) kekeruhan);
-      
-      USE_SERIAL.print("[HTTP] Menyimpan data sensor ke database ...\n");
-      int httpCode = http.GET();
-  
-      if(httpCode > 0)
-      {
-        USE_SERIAL.printf("[HTTP] kode response GET : %d\n", httpCode);
-  
-        if (httpCode == HTTP_CODE_OK)
-        {
-          respon = http.getString();
-          USE_SERIAL.println("Respon : " + respon);
-          delay(200);
-        }
-      }
-      else
-      {
-        USE_SERIAL.printf("[HTTP] GET data gagal, error: %s\n", http.errorToString(httpCode).c_str());
-      }
-      http.end();
-    }
-
-  Serial.println();
-  delay(1000);
-}
-
-void jadwal(){
-  jadwalPakan = "OFF";
-
-  if (pakanTimer.isReady()) {
-
-    // AMBIL DATA PAKAN
-    if ((WiFiMulti.run() == WL_CONNECTED))
-    {
-      USE_SERIAL.print("[HTTP] Memulai...\n");
-      
-      http.begin(client, urlGetSetting );
-      
-      USE_SERIAL.print("[HTTP] Ambil data jadwalPakan di database ...\n");
-      int httpCode = http.GET();
-  
-      if(httpCode > 0)
-      {
-        USE_SERIAL.printf("[HTTP] kode response GET : %d\n", httpCode);
-  
-        if (httpCode == HTTP_CODE_OK)
-        {
-          Serial.println();
-          
-          respon = http.getString();
-  
-          jadwalPakan = getValue(respon, '#', 0);
-  
-          USE_SERIAL.println("jadwalPakan : " + jadwalPakan);
-          delay(200);
-        }
-      }
-      else
-      {
-        USE_SERIAL.printf("[HTTP] GET data gagal, error: %s\n", http.errorToString(httpCode).c_str());
-      }
-      http.end();
-    }
-
-    if (jadwalPakan == "ON") {
-      if(flag == false) {
-        Serial.println("SERVO ON");
-        for(int i=1; i <= 3; i++){
-          servo.write(90);
-          delay(300);
-          servo.write(0);
-          delay(100);
-        }
-        flag = true;
-      }
-    } else {
-      Serial.println("SERVO OFF");
-      servo.write(0);
-
-      flag = false;
-    }
-    pakanTimer.reset();                        // Reset a second timer
-  }   
-
+    http.end();
+  }
 }
 
 String getValue(String data, char separator, int index)
