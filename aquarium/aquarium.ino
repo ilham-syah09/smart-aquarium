@@ -48,7 +48,7 @@ float kekeruhan;
 boolean flag = false, jadwal1 = false, jadwal2 = false, jadwal3 = false;;
 
 // URL WEB IOT
-String host = "http://192.168.181.185/smart-aquarium/api";
+String host = "http://192.168.94.7/smart-aquarium/api";
 String urlSimpan = host + "/sensor?kekeruhan=";
 String urlGetSetting = host + "/setting";
 
@@ -58,11 +58,7 @@ int tinggiAquarium = 20, tinggiAir = 0;
 
 void setup() {
   // put your setup code here, to run once:
-  lcd.init();
-  lcd.backlight();
-
   Serial.begin(115200);   //Komunikasi baud rate
-
   USE_SERIAL.begin(115200);
   USE_SERIAL.setDebugOutput(false);
 
@@ -76,6 +72,9 @@ void setup() {
   WiFiMulti.addAP("hp murah", "12345678"); // Sesuaikan SSID dan password ini
 
   Serial.println();
+
+  lcd.init();
+  lcd.backlight();
   
   for (int u = 1; u <= 5; u++)
   {
@@ -102,10 +101,10 @@ void setup() {
     }
   }
 
-  if (! rtc.begin()) {
+  if (!rtc.begin()) {
     Serial.println("RTC Tidak Ditemukan");
     Serial.flush();
-    abort();
+//    abort();
   }
 
   //Atur Waktu
@@ -128,7 +127,7 @@ void setup() {
   lcd.print("AQUARIUM");
 
   lcd.clear();
-  delay(2000);
+  delay(500);
 }
 
 void loop() {
@@ -148,7 +147,7 @@ void loop() {
   kirimDatabase();
 
   Serial.println();
-  delay(1000);
+  delay(500);
 }
 
 void jadwalKontrol() {
@@ -200,6 +199,8 @@ void jadwalKontrol() {
 
     flag = false;
   }
+
+  delay(500);
 }
 
 void bacaWaktuRtc() {
@@ -261,7 +262,7 @@ void bacaWaktuRtc() {
     jadwal3 = false;
   }
 
-  delay(1000);
+  delay(500);
 }
 
 void handleServo() {
@@ -269,9 +270,9 @@ void handleServo() {
       
   for(int i=1; i <= 3; i++){
     servo.write(90);
-    delay(300);
+    delay(500);
     servo.write(0);
-    delay(100);
+    delay(300);
   }
 }
 
@@ -287,16 +288,26 @@ void bacaTinggiAir() {
 
   //  Rumus pembacaan jarak tinggi
   jarak = (duration / 2) / 29.1;
-  Serial.print("Jarak : ");
-  Serial.println(jarak);
-
+  
   tinggiAir = tinggiAquarium - jarak;
 
   if (tinggiAir < 0) {
     tinggiAir = 0;
   }
+
+  Serial.print("Tinggi Air : ");
+  Serial.println(tinggiAir);
+
+  lcd.clear();
+  
+  lcd.setCursor(0, 0);
+  lcd.print("TINGGI AIR : ");
+  lcd.setCursor(13, 0);
+  lcd.print(tinggiAir);
   
   Serial.println();
+
+  delay(1000);
 }
 
 void bacaTurbidity() {
@@ -306,6 +317,8 @@ void bacaTurbidity() {
   Serial.print("Kekeruhan Air : ");
   Serial.print(kekeruhan);
   Serial.println(" NTU");
+
+  lcd.clear();
   
   lcd.setCursor(1,0);
   lcd.print("KEKERUHAN AIR");
@@ -335,6 +348,8 @@ void bacaTurbidity() {
   }
 
   Serial.println();
+
+  delay(1000);
 }
 
 void kirimDatabase() {
@@ -365,6 +380,8 @@ void kirimDatabase() {
     }
     http.end();
   }
+
+  delay(500);
 }
 
 String getValue(String data, char separator, int index)
