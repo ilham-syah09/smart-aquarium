@@ -6,35 +6,33 @@ class Api extends CI_Controller
 
     public function sensor()
     {
-        $kekeruhan = $this->input->get('kekeruhan');
+        if ($this->input->get('kekeruhan') <= 5) {
+            $status = "JERNIH";
+            $status_pompa = "SELESAI KURAS";
+        } else {
+            $status = "KERUH";
+            $status_pompa = "KURAS";
+        }
 
-        if ($kekeruhan != null) {
-            $data = [
-                'kekeruhan' => $kekeruhan
-            ];
+        $data = [
+            'kekeruhan' => $this->input->get('kekeruhan'),
+            'status' => $status,
+            'status_pompa'  => $status_pompa
+        ];
+
+        if ($data) {
 
             $this->db->order_by('id', 'desc');
-
             $data_sebelumnya = $this->db->get('sensor', 1)->row();
 
-            $kekeruhan_sebelumnya    = $data_sebelumnya->kekeruhan;
 
-            if ($data_sebelumnya) {
-                if ($kekeruhan_sebelumnya != $kekeruhan) {
-                    # code...
-                    $this->db->insert('sensor', $data);
-
-                    echo 'berhasil masuk';
-                } else {
-                    echo 'Nilai masih sama';
-                }
-            } else {
+            if ($data_sebelumnya->kekeruhan != $data['kekeruhan']) {
+                # code...
                 $this->db->insert('sensor', $data);
-
                 echo 'berhasil masuk';
+            } else {
+                echo 'Nilai masih sama';
             }
-        } else {
-            echo 'data masih sama!';
         }
     }
 
@@ -42,12 +40,12 @@ class Api extends CI_Controller
     {
         $data = $this->db->get('setting')->row();
 
-        $jam_sekarang = date('H:i');
+        $now = date('H:i');
 
-        if ($jam_sekarang == $data->jadwalPakan) {
-            echo "ON#" . "#OK";
+        if ($now == $data->jadwalPakan || $now == $data->jadwal1 || $now == $data->jadwal2 || $now == $data->jadwal3) {
+            echo "ON" . "#OK";
         } else {
-            echo "OFF#" . "#OK";
+            echo "OFF" . "#OK";
         }
     }
 }

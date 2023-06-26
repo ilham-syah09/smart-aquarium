@@ -28,6 +28,7 @@
                                         <tr>
                                             <th class="text-center">#</th>
                                             <th>Nilai Kekeruhan</th>
+                                            <th>Status</th>
                                             <th>Tanggal</th>
                                             <th>Action</th>
                                         </tr>
@@ -38,6 +39,17 @@
                                             <tr>
                                                 <td><?= $i++; ?></td>
                                                 <td><?= $data->kekeruhan; ?> NTU</td>
+                                                <td>
+                                                    <?php if ($data->status == "JERNIH") : ?>
+                                                        <div class="badge badge-success">
+                                                            <?= $data->status; ?>
+                                                        </div>
+                                                    <?php else : ?>
+                                                        <div class="badge badge-danger">
+                                                            <?= $data->status; ?>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </td>
                                                 <td><?= date('d F Y H:i:s', strtotime($data->created_at)); ?></td>
                                                 <td>
                                                     <a href="<?= base_url('monitoring/delete/' . $data->id); ?>" onclick="return confirm('apakah data akan dihapus?')" class="badge badge-danger"><i class="fas fa-trash"></i></a>

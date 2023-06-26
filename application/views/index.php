@@ -99,11 +99,28 @@
                                 </p>
                             </a>
                         </li>
+                        <li class="nav-header">Admin</li>
                         <li class="nav-item">
                             <a href="<?= base_url('profile'); ?>" class="nav-link <?= ($this->uri->segment(1) === 'profile' ? 'active' : '') ?>">
                                 <i class="nav-icon fas fa-user"></i>
                                 <p>
                                     Profile
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="<?= base_url('about'); ?>" class="nav-link <?= ($this->uri->segment(1) === 'about' ? 'active' : '') ?>">
+                                <i class="nav-icon fas fa-info"></i>
+                                <p>
+                                    About Us
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="<?= base_url('auth/logout'); ?>" data-toggle="modal" data-target="#logoutModal">
+                                <i class="nav-icon fas fa-sign-out-alt"></i>
+                                <p>
+                                    Logout
                                 </p>
                             </a>
                         </li>

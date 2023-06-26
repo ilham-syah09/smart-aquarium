@@ -22,12 +22,15 @@ class Admin extends CI_Controller
 
     public function index()
     {
+
         $jadwal = $this->db->get('setting', 1)->row();
 
         $data = [
             'title'     => 'Home page',
             'page'      => 'home',
-            'jadwal'    => $jadwal
+            'jadwal'    => $jadwal,
+            'kuras'     => $this->data->getStatusPompa("KURAS"),
+            'selesaiKuras'     => $this->data->getStatusPompa('SELESAI KURAS'),
         ];
 
         $this->load->view('index', $data);
@@ -52,7 +55,9 @@ class Admin extends CI_Controller
     public function updateJadwal()
     {
         $data = [
-            'jadwalPakan'   => $this->input->post('jadwalPakan')
+            'jadwal1'   => $this->input->post('jadwal1'),
+            'jadwal2'   => $this->input->post('jadwal2'),
+            'jadwal3'   => $this->input->post('jadwal3'),
         ];
 
         $this->db->where('id', 1);

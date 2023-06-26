@@ -17,21 +17,6 @@
         <div class="container-fluid">
             <!-- Info boxes -->
             <div class="row">
-                <div class="col-md">
-                    <div class="card">
-                        <div class="card-body">
-                            <form action="<?= base_url('admin/updateJadwal'); ?>" method="post">
-                                <div class="form-group">
-                                    <label>Jadwal pemberi makan ikan</label>
-                                    <input type="text" name="jadwalPakan" class="form-control js-masked-time" placeholder="__:__" value="<?= $jadwal->jadwalPakan; ?>">
-                                </div>
-                                <button type="submit" class="btn btn-primary">save</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
                 <div class="col-xl-6 col-lg-6 col-sm-6 col-md-6">
                     <div class="info-box mb-3">
                         <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-book"></i></span>
@@ -67,6 +52,60 @@
                 </div>
                 <!-- /.col -->
             </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            Jadwal Pemberian Pakan Ikan
+                        </div>
+                        <div class="card-body">
+                            <form action="<?= base_url('admin/updateJadwal'); ?>" method="post">
+                                <div class="form-group">
+                                    <label>Jadwal Pagi</label>
+                                    <input type="text" name="jadwal1" class="form-control js-masked-time" placeholder="__:__" value="<?= $jadwal->jadwal1; ?>">
+                                </div>
+                                <div class="form-group">
+                                    <label>Jadwal Siang</label>
+                                    <input type="text" name="jadwal2" class="form-control js-masked-time" placeholder="__:__" value="<?= $jadwal->jadwal2; ?>">
+                                </div>
+                                <div class="form-group">
+                                    <label>Jadwal Malam</label>
+                                    <input type="text" name="jadwal3" class="form-control js-masked-time" placeholder="__:__" value="<?= $jadwal->jadwal3; ?>">
+                                </div>
+                                <button type="submit" class="btn btn-primary">save</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            Status Kuras
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Status Kuras</th>
+                                        <th scope="col">Waktu</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><?= $kuras->status_pompa; ?></td>
+                                        <td><?= date('d F Y H:i:s', strtotime($kuras->created_at)); ?></td>
+                                    </tr>
+                                    <tr>
+                                        <td><?= $selesaiKuras->status_pompa; ?></td>
+                                        <td><?= date('d F Y H:i:s', strtotime($selesaiKuras->created_at)); ?></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- /.row -->
         </div>
         <!--/. container-fluid -->
