@@ -37,7 +37,7 @@ Servo servo;
 
 // turbidity
 #define pinTurbidity A0
-float kekeruhan;
+float voltage, kekeruhan;
 
 // pump
 #define pump D5
@@ -312,7 +312,13 @@ void bacaTinggiAir() {
 
 void bacaTurbidity() {
   int sensorValue = analogRead(pinTurbidity);
-  kekeruhan = 100 - (sensorValue / 10.24);
+
+  voltage = sensorValue * (5.0 / 1023.0); // Convert the analog reading (which goes from 0 - 1023) to a voltageage (0 - 5V):
+  kekeruhan = 100.00 - (voltage / 2.3) * 100.00;
+
+  if (kekeruhan < 0) {
+    kekeruhan = 0;
+  }
 
   Serial.print("Kekeruhan Air : ");
   Serial.print(kekeruhan);
