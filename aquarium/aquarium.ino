@@ -65,6 +65,9 @@ void setup()
   USE_SERIAL.begin(115200);
   USE_SERIAL.setDebugOutput(false);
 
+  servo.attach(pinServo);
+  servo.write(0);
+
   for (uint8_t t = 4; t > 0; t--)
   {
     USE_SERIAL.printf("[SETUP] Tunggu %d...\n", t);
@@ -106,7 +109,7 @@ void setup()
   {
     Serial.println("RTC Tidak Ditemukan");
     Serial.flush();
-    //    abort();
+    abort();
   }
 
   // Atur Waktu
