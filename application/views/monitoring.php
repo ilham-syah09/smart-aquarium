@@ -27,6 +27,7 @@
                                     <thead>
                                         <tr>
                                             <th class="text-center">#</th>
+                                            <th>Tinggi Air</th>
                                             <th>Nilai Kekeruhan</th>
                                             <th>Status</th>
                                             <th>Tanggal</th>
@@ -38,6 +39,7 @@
                                         foreach ($nilai as $data) : ?>
                                             <tr>
                                                 <td><?= $i++; ?></td>
+                                                <td><?= $data->tinggiAir; ?> cm</td>
                                                 <td><?= $data->kekeruhan; ?> NTU</td>
                                                 <td>
                                                     <?php if ($data->status == "JERNIH") : ?>

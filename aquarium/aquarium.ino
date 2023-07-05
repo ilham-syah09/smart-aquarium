@@ -33,14 +33,15 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 // servo
 #include <Servo.h>
 Servo servo;
-#define pinServo D0
+#define pinServo D3
 
 // turbidity
 #define pinTurbidity A0
-float kekeruhan;
+float voltage, kekeruhan;
 
 // pump
 #define pump D5
+#define buzzer D6
 
 #define relay_on LOW
 #define relay_off HIGH
@@ -48,7 +49,7 @@ float kekeruhan;
 boolean flag = false, jadwal1 = false, jadwal2 = false, jadwal3 = false;;
 
 // URL WEB IOT
-String host = "http://192.168.181.185/smart-aquarium/api";
+String host = "http://aquarium.presensigis-tlsi.my.id/api";
 String urlSimpan = host + "/sensor?kekeruhan=";
 String urlGetSetting = host + "/setting";
 
@@ -58,11 +59,7 @@ int tinggiAquarium = 20, tinggiAir = 0;
 
 void setup() {
   // put your setup code here, to run once:
-  lcd.init();
-  lcd.backlight();
-
   Serial.begin(115200);   //Komunikasi baud rate
-
   USE_SERIAL.begin(115200);
   USE_SERIAL.setDebugOutput(false);
 
@@ -76,6 +73,13 @@ void setup() {
   WiFiMulti.addAP("hp murah", "12345678"); // Sesuaikan SSID dan password ini
 
   Serial.println();
+
+  //  servo
+  servo.attach(pinServo);
+  servo.write(0);
+  
+  lcd.init();
+  lcd.backlight();
   
   for (int u = 1; u <= 5; u++)
   {
@@ -102,10 +106,10 @@ void setup() {
     }
   }
 
-  if (! rtc.begin()) {
+  if (!rtc.begin()) {
     Serial.println("RTC Tidak Ditemukan");
     Serial.flush();
-    abort();
+//    abort();
   }
 
   //Atur Waktu
@@ -113,14 +117,11 @@ void setup() {
 
   pinMode(airPinTrigger, OUTPUT);
   pinMode(airPinEcho, INPUT);
+  pinMode(buzzer, OUTPUT);
 
   // water pump
   pinMode(pump, OUTPUT);
   digitalWrite(pump, relay_off);
-
-  //  servo
-  servo.attach(pinServo);
-  servo.write(0);
 
   lcd.setCursor(4, 0);
   lcd.print("SMART");
@@ -128,7 +129,7 @@ void setup() {
   lcd.print("AQUARIUM");
 
   lcd.clear();
-  delay(2000);
+  delay(500);
 }
 
 void loop() {
@@ -138,9 +139,6 @@ void loop() {
   // jadwal pakan kontrol
   jadwalKontrol();
 
-  // baca waktu rtc
-  bacaWaktuRtc();
-
   // sensor turbidity
   bacaTurbidity();
 
@@ -148,7 +146,7 @@ void loop() {
   kirimDatabase();
 
   Serial.println();
-  delay(1000);
+  delay(500);
 }
 
 void jadwalKontrol() {
@@ -178,6 +176,20 @@ void jadwalKontrol() {
 
         USE_SERIAL.println("jadwalPakan : " + jadwalPakan);
         delay(200);
+
+        if (jadwalPakan == "ON") {
+          if (flag == false) {
+            Serial.println("SERVO ON");
+            handleServo();
+            
+            flag = true;
+          }
+        } else {
+          Serial.println("SERVO OFF");
+          servo.write(0);
+      
+          flag = false;
+        }
       }
     }
     else
@@ -185,21 +197,11 @@ void jadwalKontrol() {
       USE_SERIAL.printf("[HTTP] GET data gagal, error: %s\n", http.errorToString(httpCode).c_str());
     }
     http.end();
-  }
-
-  if (jadwalPakan == "ON") {
-    if (flag == false) {
-      Serial.println("SERVO ON");
-      handleServo();
-      
-      flag = true;
-    }
   } else {
-    Serial.println("SERVO OFF");
-    servo.write(0);
-
-    flag = false;
+    bacaWaktuRtc();
   }
+
+  delay(500);
 }
 
 void bacaWaktuRtc() {
@@ -261,17 +263,19 @@ void bacaWaktuRtc() {
     jadwal3 = false;
   }
 
-  delay(1000);
+  delay(500);
 }
 
 void handleServo() {
   Serial.println("Servo Open");
       
   for(int i=1; i <= 3; i++){
+    digitalWrite(buzzer, HIGH);
     servo.write(90);
-    delay(300);
+    delay(500);
+    digitalWrite(buzzer, LOW);
     servo.write(0);
-    delay(100);
+    delay(300);
   }
 }
 
@@ -287,25 +291,43 @@ void bacaTinggiAir() {
 
   //  Rumus pembacaan jarak tinggi
   jarak = (duration / 2) / 29.1;
-  Serial.print("Jarak : ");
-  Serial.println(jarak);
-
+  
   tinggiAir = tinggiAquarium - jarak;
 
   if (tinggiAir < 0) {
     tinggiAir = 0;
   }
+
+  Serial.print("Tinggi Air : ");
+  Serial.println(tinggiAir);
+
+  lcd.clear();
+  
+  lcd.setCursor(0, 0);
+  lcd.print("TINGGI AIR : ");
+  lcd.setCursor(13, 0);
+  lcd.print(tinggiAir);
   
   Serial.println();
+
+  delay(1000);
 }
 
 void bacaTurbidity() {
   int sensorValue = analogRead(pinTurbidity);
-  kekeruhan = 100 - (sensorValue / 10.24);
+
+  voltage = sensorValue * (3.3 / 1023.0); // Convert the analog reading (which goes from 0 - 1023) to a voltageage (0 - 5V):
+  kekeruhan = 100.00 - (voltage / 2.3) * 100.00;
+
+  if (kekeruhan < 0) {
+    kekeruhan = 0;
+  }
 
   Serial.print("Kekeruhan Air : ");
   Serial.print(kekeruhan);
   Serial.println(" NTU");
+
+  lcd.clear();
   
   lcd.setCursor(1,0);
   lcd.print("KEKERUHAN AIR");
@@ -335,6 +357,8 @@ void bacaTurbidity() {
   }
 
   Serial.println();
+
+  delay(1000);
 }
 
 void kirimDatabase() {
@@ -365,6 +389,8 @@ void kirimDatabase() {
     }
     http.end();
   }
+
+  delay(500);
 }
 
 String getValue(String data, char separator, int index)

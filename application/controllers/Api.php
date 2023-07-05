@@ -34,6 +34,8 @@ class Api extends CI_Controller
             } else {
                 echo 'Nilai masih sama';
             }
+        } else {
+            echo 'server error';
         }
     }
 
