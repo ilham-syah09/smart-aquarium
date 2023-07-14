@@ -28,6 +28,7 @@
                                         <tr>
                                             <th class="text-center">#</th>
                                             <th>Tinggi Air</th>
+                                            <th>Status Tinggi Air</th>
                                             <th>Nilai Kekeruhan</th>
                                             <th>Status</th>
                                             <th>Tanggal</th>
@@ -40,6 +41,17 @@
                                             <tr>
                                                 <td><?= $i++; ?></td>
                                                 <td><?= $data->tinggiAir; ?> cm</td>
+                                                <td>
+                                                    <?php if ($data->tinggiAir >= 15) : ?>
+                                                        <div class="badge badge-success">
+                                                            Normal
+                                                        </div>
+                                                    <?php else : ?>
+                                                        <div class="badge badge-danger">
+                                                            Kekurangan Air
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </td>
                                                 <td><?= $data->kekeruhan; ?> NTU</td>
                                                 <td>
                                                     <?php if ($data->status == "JERNIH") : ?>

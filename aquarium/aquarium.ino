@@ -166,7 +166,7 @@ void jadwalKontrol() {
     {
       USE_SERIAL.printf("[HTTP] kode response GET : %d\n", httpCode);
 
-      if (httpCode == HTTP_CODE_OK)
+      if (httpCode == HTTP_CODE_OK) // code 200
       {
         Serial.println();
         
@@ -202,6 +202,19 @@ void jadwalKontrol() {
   }
 
   delay(500);
+}
+
+void handleServo() {
+  Serial.println("Servo Open");
+      
+  for(int i=1; i <= 3; i++){
+    digitalWrite(buzzer, HIGH);
+    servo.write(90);
+    delay(500);
+    digitalWrite(buzzer, LOW);
+    servo.write(0);
+    delay(300);
+  }
 }
 
 void bacaWaktuRtc() {
@@ -266,19 +279,6 @@ void bacaWaktuRtc() {
   delay(500);
 }
 
-void handleServo() {
-  Serial.println("Servo Open");
-      
-  for(int i=1; i <= 3; i++){
-    digitalWrite(buzzer, HIGH);
-    servo.write(90);
-    delay(500);
-    digitalWrite(buzzer, LOW);
-    servo.write(0);
-    delay(300);
-  }
-}
-
 void bacaTinggiAir() {
   //  Inisialisasi variabel untuk pembacaan tinggi pakan
   long duration, jarak;
@@ -308,6 +308,9 @@ void bacaTinggiAir() {
   lcd.setCursor(13, 0);
   lcd.print(tinggiAir);
   
+  lcd.setCursor(0, 1);
+  lcd.print((tinggiAir < 15) ? "KEKURANGAN AIR" : "NORMAL");
+  
   Serial.println();
 
   delay(1000);
@@ -336,26 +339,41 @@ void bacaTurbidity() {
   lcd.setCursor(10,1);
   lcd.print("NTU");
 
+  String statusAir = "";
+  
   if (kekeruhan >= 25.00 && kekeruhan <= 50.00)
   {
     timerKuras.setInterval(10000);
 
-    if (timerKuras.isReady()) {
+    if (timerKuras.isReady()) { // jika sudah 10 detik
       digitalWrite(pump, relay_off);
       Serial.println("Pompa Air Berhenti");
 
       timerKuras.reset();
-    } else {
+    } else { // jika belum 10 detik
       digitalWrite(pump, relay_on);
       Serial.println("Pompa Air Berjalan");
     }
+
+    statusAir = "KERUH";
   }
   else
   {
     digitalWrite(pump, relay_off);
     Serial.println("Pompa Air Berhenti");
+
+    statusAir = "JERNIH";
   }
 
+  delay(1500);
+
+  lcd.clear();
+  
+  lcd.setCursor(0, 0);
+  lcd.print("STATUS AIR");
+  lcd.setCursor(0, 1);
+  lcd.print(statusAir);
+  
   Serial.println();
 
   delay(1000);
