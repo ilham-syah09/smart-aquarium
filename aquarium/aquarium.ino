@@ -308,8 +308,13 @@ void bacaTinggiAir() {
   lcd.setCursor(13, 0);
   lcd.print(tinggiAir);
   
-  lcd.setCursor(0, 1);
-  lcd.print((tinggiAir < 15) ? "KEKURANGAN AIR" : "NORMAL");
+  if (tinggiAir < 15) {
+    lcd.setCursor(1, 1);
+    lcd.print("KEKURANGAN AIR");
+  } else {
+    lcd.setCursor(5, 1);
+    lcd.print("NORMAL");
+  }
   
   Serial.println();
 
@@ -332,16 +337,16 @@ void bacaTurbidity() {
 
   lcd.clear();
   
-  lcd.setCursor(1,0);
+  lcd.setCursor(1, 0);
   lcd.print("KEKERUHAN AIR");
-  lcd.setCursor(3,1);
+  lcd.setCursor(3, 1);
   lcd.print(kekeruhan);
   lcd.setCursor(10,1);
   lcd.print("NTU");
 
   String statusAir = "";
   
-  if (kekeruhan >= 25.00 && kekeruhan <= 50.00)
+  if (kekeruhan >= 20.00 && kekeruhan <= 50.00)
   {
     timerKuras.setInterval(10000);
 
@@ -369,9 +374,9 @@ void bacaTurbidity() {
 
   lcd.clear();
   
-  lcd.setCursor(0, 0);
+  lcd.setCursor(2, 0);
   lcd.print("STATUS AIR");
-  lcd.setCursor(0, 1);
+  lcd.setCursor(5, 1);
   lcd.print(statusAir);
   
   Serial.println();

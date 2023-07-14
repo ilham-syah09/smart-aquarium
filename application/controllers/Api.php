@@ -7,7 +7,7 @@ class Api extends CI_Controller
         $kekeruhan = $this->input->get('kekeruhan');
         $tinggiAir = $this->input->get('tinggiAir');
 
-        if ($kekeruhan <= 25.00) {
+        if ($kekeruhan <= 20.00) {
             $status       = "JERNIH";
             $status_pompa = "SELESAI KURAS";
         } else {
