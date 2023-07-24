@@ -26,7 +26,7 @@
         <!-- /.login-logo -->
         <div class="text-center">
             <img src="<?= base_url('assets/image/phb.png'); ?>" alt="logo phb" class="img-fluid" width="170">
-            <h3 class="mb-5">Smart Aquarium Berbasis IoT</h3>
+            <h3 class="mb-5">SMART AKUARIUM</h3>
         </div>
         <div class="card card-outline card-primary">
             <div class="card-header text-center">
