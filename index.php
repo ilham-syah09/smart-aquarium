@@ -54,18 +54,7 @@
  *
  * NOTE: If you change these, also change the error_reporting() code below
  */
-if (!defined('ENVIRONMENT')) {
-	$domain = strtolower($_SERVER['HTTP_HOST']);
-
-	switch ($domain) {
-		case 'aquarium.sewadomain.my.id':
-			define('ENVIRONMENT', 'production');
-			break;
-		default:
-			define('ENVIRONMENT', 'development');
-			break;
-	}
-}
+define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development');
 
 /*
  *---------------------------------------------------------------
